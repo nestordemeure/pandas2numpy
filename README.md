@@ -1,6 +1,7 @@
 # Pandas2Numpy
 
 Converting Pandas dataframes into Numpy tensor to help feeding them to deep learning frameworks.
+This library tries to be modular, easy to use with any deep-learning framework by building on the common numpy API, and non-surprising in its behaviour.
 
 ## Instalation
 
@@ -12,7 +13,11 @@ pip install git+https://github.com:nestordemeure/pandas2numpy.git
 
 ## Usage
 
-The `Pandas2numpy` class takes a dataframe and column names in order to build an object that can encode/decode dataframe properly.
+The `Pandas2numpy` class takes an example dataframe and column names in order to build an object that can encode/decode dataframe properly.
+It also takes information on columns you might want to normalize, put in logscale and that might contain NA that should be dealt with.
+
+NA in categorical columns are encoded by adding an additional category.
+NA in continuous columns are replaced by the median value of the column (as computed in the example dataframe) and marked in a dedicated categorical column.
 
 ```python
 from pandas2numpy import Pandas2numpy

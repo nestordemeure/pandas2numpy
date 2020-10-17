@@ -81,14 +81,15 @@ class Pandas2numpy():
         if include_continuous_NA_info: df = pd.concat((df, continuous_col_isNA), axis=1)
         return df.to_numpy()
 
-    def to_numpy(self, df):
+    def to_numpy(self, df, include_continuous_NA_info=True):
         """
         takes a dataframe and encode it as a pair `(tensor_cont,tensor_cat)`
         where `tensor_cont` stores the continuous columns
         and `tensor_cat` stores the categorial columns
+        `include_continuous_NA_info` should be set to true if you want additional categorical columns encoding whether continuous variables contain NA
         """
         tensor_cont = self.continuous_to_numpy(df)
-        tensor_cat = self.categorial_to_numpy(df)
+        tensor_cat = self.categorial_to_numpy(df, include_continuous_NA_info=include_continuous_NA_info)
         return (tensor_cont, tensor_cat)
 
     #--------------------------------------------------------------------------
