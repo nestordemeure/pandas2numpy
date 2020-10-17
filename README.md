@@ -70,4 +70,4 @@ row_categorical2 = tabularEncoder.categorial_from_numpy(tensor_categorical2)
 nb_categories = tabularEncoder.nb_category_per_categorical_column
 ```
 
-For further information, we invite you to read the documentation of the individual functions.
+For further information, we invite you to read the [documentation of the individual functions](https://github.com/nestordemeure/pandas2numpy/blob/main/pandas2numpy/pandas2numpy.py).
