@@ -41,7 +41,7 @@ tabularEncoder = Pandas2numpy(df, continuous_columns=continuous_columns, categor
                               normalized_columns=normalized_columns, NA_columns=NA_columns, logscale_columns=logscale_columns)
 ```
 
-Once constructed, you can use its `to_numpy` methods to convert dataframes and rows into numpy tensors.
+Once constructed, you can use the `to_numpy` methods to convert dataframes and rows into numpy tensors.
 We also provide methods that deal with categorical and continuous variables only.
 
 ```python
