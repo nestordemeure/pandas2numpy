@@ -2,85 +2,68 @@
 
 Converting Pandas dataframes into Numpy tensor to help feeding them to deep learning frameworks.
 
-## Usage
+## Instalation
 
-The class `Pandas2numpy` takes an aexample dataframe (that will be used to get metrics for later normalization), input and output column names plus names of columns to which various transformations will be applied.
+You can install our librarie with:
 
-Once build, it has an `encode` method that takes a dataframe and returns a triplet with the continuous, categorial and output columns transformed into three tensors.
-
-It also has a `nb_label_per_category` member which stores the number of label per category (useful to make embeddings) in an array with one col per category.
-
-```python
-# a dataframe to be converted
-df = ...
-
-# builds encoder with an example dataframe to extract metrics for normalization
-tabularEncoder = Pandas2numpy(df, continuous_columns=[], categorial_columns=[],
-							      Normalized_columns=[], NA_columns=[], Log_columns=[])
-
-# converts dataframe into pair of tensors
-t_cont,t_cat = tabularEncoder.encode(df)
-
-# converts subset of dataframe into pair of tensors
-indexes_validationset = ...
-t_cont,t_cat = tabularEncoder.encode(df[indexes_validationset]) # TODO
-
-# converts row into pair of tensors
-t_cont,t_cat = tabularEncoder.encode(df.iloc[0]) # TODO
+```
+pip install git+https://github.com:nestordemeure/pandas2numpy.git
 ```
 
-*NOTE:* to encode outputs and inputs separately, you can just make one decoder for the inputs and another for the outputs.
+## Usage
 
--------------------------------------------------------------------------------------------------------
+The `Pandas2numpy` class takes a dataframe and column names in order to build an object that can encode/decode dataframe properly.
 
-## categorial columns
+```python
+from pandas2numpy import Pandas2numpy
 
-columns are categorified if needed
-stores encoding key to be able to encode new columns identically
-converts them to long tensor
+# example dataframe
+df = pandas.read_csv('https://raw.githubusercontent.com/mwaskom/seaborn-data/master/iris.csv')
 
-## Logarithm transformation
- 
-takes names of column containing values with large difference in magnitude
-applies a logarithm to those columns
+# continuous variables to be encoded
+continuous_columns = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width']
+# categorical_columns to be encoded
+categorical_columns = ['species']
+# columns that should be set to mean=0, std=1
+normalized_columns = ['sepal_length', 'sepal_width']
+# columns that might contain NA
+NA_columns = ['sepal_width', 'species']
+# columns to which a logarithm should be applied
+logscale_columns = ['sepal_length', 'petal_length']
 
-## NA transformation
- 
-takes names of columns containing NA
-add a boolean contain_na col for each of those columns, include it in cat columns
-replace NA by median value
- 
-## Normalize
+# builds an encoder with an example dataframe to extract metrics for normalization and possible categories
+tabularEncoder = Pandas2numpy(df, continuous_columns=continuous_columns, categorical_columns=categorical_columns,
+							      normalized_columns=normalized_columns, NA_columns=NA_columns, logscale_columns=logscale_columns)
+```
 
-normalizer:
-take dataframe
-return mean and std stored in rows to be used later
-later we use those values
+Once constructed, you can use its `to_numpy` methods to convert dataframes and rows into numpy tensors.
+We also provide methods that deal with categorical and continuous variables only.
 
-takes names of columns that should be normalized
-substract a mean and divide by a standard deviation
+```python
+# converts a dataframe into a tensor of floats and a tensor of ints
+tensor_continuous,tensor_categorical = tabularEncoder.to_numpy(df)
 
--------------------------------------------------------------------------------------------------------
+# converts only continuous data into a tensor
+tensor_continuous2 = tabularEncoder.continuous_to_numpy(df)
 
-include `decode`, `decode_continuous` and `decode_categorial` methods
+# converts a row (only the categorical data in this example)
+# note the `df.iloc[[0]]` syntax to ensure that the row in in a dataframe and not a serie
+tensor_categorical2 = tabularEncoder.categorial_to_numpy(df.iloc[[0]])
+```
 
-mostly useful when predicting in log space or a category
-which needs decoding to get back to array values
+We also provide `from_numpy` methods to convert arrays back to dataframes.
 
-`decode` uses `decode_continuous` and `decode_categorial`,
-concatenates their outputs
-adds the NA managing into account (turn values into NA were is_na is true, removes _is_na coluns)
+```python
+# converts tensors back into a dataframe (note that the order of columns might change)
+df = tabularEncoder.from_numpy(tensor_continuous,tensor_categorical)
 
--------------------------------------------------------------------------------------------------------
+# converts the continuous tensor back into a dataframe (that will only include continuous columns)
+df_continuous2 = tabularEncoder.continuous_from_numpy(tensor_continuous2)
 
-maybe also `encode_continuous`, `encode_categorial`
-`categorial_to_numpy`
-`categorial_from_numpy`
-`to_numpy`
+# converts the categorical tensor into a one row dataframe
+row_categorical2 = tabularEncoder.categorial_from_numpy(tensor_categorical2)
+```
 
--------------------------------------------------------------------------------------------------------
+`Pandas2numpy` also has a `nb_category_per_categorical_column` member containing a numpy array with the number of category in each categorical column (which is useful to make embeddings).
 
-To do deep-learning without fastai, it would be nice to have:
-a function that displays a progress bar
-a function that displays a convergence plot live
-
+For further information, we invite you to read the documentation of the individual functions.
