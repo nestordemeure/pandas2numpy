@@ -47,11 +47,11 @@ tensor_continuous,tensor_categorical = tabularEncoder.to_numpy(df)
 tensor_continuous2 = tabularEncoder.continuous_to_numpy(df)
 
 # converts a row (only the categorical data in this example)
-# note the `df.iloc[[0]]` syntax to ensure that the row in in a dataframe and not a serie
+# note the `df.iloc[[0]]` syntax to ensure that the row is in a dataframe and not a serie
 tensor_categorical2 = tabularEncoder.categorial_to_numpy(df.iloc[[0]])
 ```
 
-We also provide `from_numpy` methods to convert arrays back to dataframes.
+The `from_numpy` methods convert arrays back to dataframes.
 
 ```python
 # converts tensors back into a dataframe (note that the order of columns might change)
@@ -64,6 +64,10 @@ df_continuous2 = tabularEncoder.continuous_from_numpy(tensor_continuous2)
 row_categorical2 = tabularEncoder.categorial_from_numpy(tensor_categorical2)
 ```
 
-`Pandas2numpy` also has a `nb_category_per_categorical_column` member containing a numpy array with the number of category in each categorical column (which is useful to make embeddings).
+`Pandas2numpy` also has a `nb_category_per_categorical_column` member containing a numpy array with the number of category encoded as int for each column of the categorical tensor (which is useful to make embeddings).
+
+```python
+nb_categories = tabularEncoder.nb_category_per_categorical_column
+```
 
 For further information, we invite you to read the documentation of the individual functions.
