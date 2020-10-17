@@ -18,10 +18,16 @@ class Pandas2numpy():
         # stores normalization info
         self.normalized_columns_means = transformed_df[self.normalized_columns].mean(skipna=True)
         self.normalized_columns_std = transformed_df[self.normalized_columns].std(skipna=True)
-        # stores info on categories
+        # stores info on categories encoding
         self.category_dtypes = dataframe[self.categorial_columns].astype('category').dtypes
-        # TODO add 1 to NA categories
-        self.nb_label_per_category = self.category_dtypes.apply(lambda cat: len(cat.categories)).to_numpy()
+        # stores number of label per category (useful to find embeding sizes and such)
+        self.nb_label_per_category = []
+        for (col_index, col_name) in enumerate(self.categorial_columns):
+            # counts number of label per column
+            nb_label = len(self.category_dtypes[col_index].categories)
+            # adds one label when NA is a possibility
+            if col_name in self.NA_cat_columns: nb_label += 1
+            self.nb_label_per_category.append(nb_label)
 
     #--------------------------------------------------------------------------
     # ENCODING
@@ -37,12 +43,15 @@ class Pandas2numpy():
         return df.to_numpy()
 
     def categorial_to_numpy(self, df):
+        """adds categorial column to encode wether continuous NA_columns columns contains NA"""
+        # encodes whether a cont column contained an NA (that was replaced by a median)
+        continuous_col_isNA = df[self.NA_cont_columns].isna().astype(int)
         # encodes data as categories using predefined categories
-        df = df[self.categorial_columns].astype(self.category_dtypes) \
-                                        .apply(lambda x: x.cat.codes) \
+        df = df[self.categorial_columns].astype(self.category_dtypes).apply(lambda x: x.cat.codes)
         # NA have code -1 by default, insures all codes are positive
         df[self.NA_cat_columns] += 1
-        # TODO add NA cont columns
+        # adds columns encoding whether continuous columns where NA
+        df = pd.concat((df, continuous_col_isNA), axis=1)
         return df.to_numpy()
 
     def to_numpy(self, df):
@@ -67,6 +76,7 @@ class Pandas2numpy():
     def categorial_from_numpy(self, tensor_cat):
         columns = []
         # decodes one columns at a time
+        # the columns encoding wether a cont column contained an NA are ignored
         for (col_index, col_name) in enumerate(self.categorial_columns):
             codes = tensor_cat[:,col_index]
             # gets NA back to code -1
@@ -74,16 +84,20 @@ class Pandas2numpy():
             # translates codes in to their categories
             categories = self.category_dtypes[col_index].categories
             column = pd.Categorical.from_codes(codes, categories=categories)
+            # save column
             columns.append(column)
         df = pd.DataFrame(data=columns, columns=self.categorial_columns)
-        # TODO deal with NA columns
         return df
 
-    def from_numpy(self, tensor_cont, tensor_cat, copy=True):
+    def from_numpy(self, tensor_cont, tensor_cat, copy=True, decode_NA=True):
         """use copy to avoid side effects"""
         df_cont = self.continuous_from_numpy(tensor_cont, copy=copy)
         df_cat = self.categorial_from_numpy(tensor_cat)
+        # use NA encoding column to replace continuous variables with NA
+        if decode_NA:
+            isNA_tensor = tensor_cat[:,len(self.categorial_columns):]
+            isNA_df = pd.DataFrame(data=isNA_tensor, columns=self.NA_cont_columns).astype(bool)
+            df_cont[isNA_df] = np.nan
         # merge dataframes
         df = pd.concat((df_cont, df_cat), axis=1)
-        # TODO remove NA columns
         return df
