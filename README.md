@@ -33,7 +33,7 @@ logscale_columns = ['sepal_length', 'petal_length']
 
 # builds an encoder with an example dataframe to extract metrics for normalization and possible categories
 tabularEncoder = Pandas2numpy(df, continuous_columns=continuous_columns, categorical_columns=categorical_columns,
-							      normalized_columns=normalized_columns, NA_columns=NA_columns, logscale_columns=logscale_columns)
+                              normalized_columns=normalized_columns, NA_columns=NA_columns, logscale_columns=logscale_columns)
 ```
 
 Once constructed, you can use its `to_numpy` methods to convert dataframes and rows into numpy tensors.
