@@ -8,7 +8,7 @@ This library tries to be modular, easy to use with any deep-learning framework b
 You can install our librarie with:
 
 ```
-pip install git+https://github.com:nestordemeure/pandas2numpy.git
+pip install git+https://github.com/nestordemeure/pandas2numpy.git
 ```
 
 ## Usage
