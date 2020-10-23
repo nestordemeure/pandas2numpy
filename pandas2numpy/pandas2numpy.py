@@ -2,16 +2,17 @@ import warnings
 import pandas as pd
 import numpy as np
 
-def col_exist(col_list, all_columns):
+def assert_list_contain_all(l, l_subset):
     "Raise a warning if some columns from `col_list` do not exist in `all_columns`."
-    non_existing_columns = set(col_list).difference(all_columns)
-    if len(non_existing_columns) != 0:
+    non_existing_columns = set(l_subset).difference(l)
+    print(non_existing_columns)
+    if len(non_existing_columns) > 0:
         non_existing_columns_names = repr(list(non_existing_columns))
-        warnings.warn("The columns " + non_existing_columns_names + " are not present in the dataframe and will be ignored.")
+        warnings.warn("The columns " + non_existing_columns_names + " are not present in the dataframe and will be ignored!")
 
-def col_list_intersection(col_list, col_subset):
-    "Returns the intersection of `col_list` and `col_subset`."
-    return list(set(col_list).intersection(col_subset))
+def list_intersection(l, l_superset):
+    "Returns the intersection of `l` and `l_superset`."
+    return list(set(l).intersection(l_superset))
 
 class Pandas2numpy():
     "Dataframe to tensor converter for deep learning."
@@ -28,18 +29,18 @@ class Pandas2numpy():
         """
         # insures that all columns names are valid
         all_columns = dataframe.columns
-        col_exist(continuous_columns, all_columns)
-        col_exist(categorical_columns, all_columns)
-        col_exist(normalized_columns, all_columns)
-        col_exist(logscale_columns, all_columns)
-        col_exist(NA_columns, all_columns)
+        assert_list_contain_all(all_columns, continuous_columns)
+        assert_list_contain_all(all_columns, categorical_columns)
+        assert_list_contain_all(all_columns, normalized_columns)
+        assert_list_contain_all(all_columns, logscale_columns)
+        assert_list_contain_all(all_columns, NA_columns)
         # stores target column names
-        self.continuous_columns = continuous_columns
-        self.categorical_columns = categorical_columns
-        self.normalized_columns = col_list_intersection(normalized_columns, continuous_columns)
-        self.logscale_columns = col_list_intersection(logscale_columns, continuous_columns)
-        self.NA_cont_columns = col_list_intersection(NA_columns, continuous_columns)
-        self.NA_cat_columns = col_list_intersection(NA_columns, categorical_columns)
+        self.continuous_columns = list_intersection(continuous_columns, all_columns)
+        self.categorical_columns = list_intersection(categorical_columns, all_columns)
+        self.normalized_columns = list_intersection(normalized_columns, continuous_columns)
+        self.logscale_columns = list_intersection(logscale_columns, continuous_columns)
+        self.NA_cont_columns = list_intersection(NA_columns, continuous_columns)
+        self.NA_cat_columns = list_intersection(NA_columns, categorical_columns)
         # apply logscale transformation in order to measure normalization info in proper scale
         transformed_df = dataframe[self.continuous_columns]
         transformed_df[self.logscale_columns] = transformed_df[self.logscale_columns].apply(np.log)
