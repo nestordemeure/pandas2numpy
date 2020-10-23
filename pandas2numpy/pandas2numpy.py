@@ -2,10 +2,9 @@ import warnings
 import pandas as pd
 import numpy as np
 
-def assert_list_contain_all(l, l_subset):
-    "Raise a warning if some columns from `col_list` do not exist in `all_columns`."
+def assert_list_contains_all(l, l_subset):
+    "Raise a warning if some columns from `l_subset` do not exist in `l`."
     non_existing_columns = set(l_subset).difference(l)
-    print(non_existing_columns)
     if len(non_existing_columns) > 0:
         non_existing_columns_names = repr(list(non_existing_columns))
         warnings.warn("The columns " + non_existing_columns_names + " are not present in the dataframe and will be ignored!")
@@ -29,21 +28,21 @@ class Pandas2numpy():
         """
         # insures that all columns names are valid
         all_columns = dataframe.columns
-        assert_list_contain_all(all_columns, continuous_columns)
-        assert_list_contain_all(all_columns, categorical_columns)
-        assert_list_contain_all(all_columns, normalized_columns)
-        assert_list_contain_all(all_columns, logscale_columns)
-        assert_list_contain_all(all_columns, NA_columns)
+        assert_list_contains_all(all_columns, continuous_columns)
+        assert_list_contains_all(all_columns, categorical_columns)
+        assert_list_contains_all(all_columns, normalized_columns)
+        assert_list_contains_all(all_columns, logscale_columns)
+        assert_list_contains_all(all_columns, NA_columns)
         # stores target column names
         self.continuous_columns = list_intersection(continuous_columns, all_columns)
         self.categorical_columns = list_intersection(categorical_columns, all_columns)
-        self.normalized_columns = list_intersection(normalized_columns, continuous_columns)
-        self.logscale_columns = list_intersection(logscale_columns, continuous_columns)
-        self.NA_cont_columns = list_intersection(NA_columns, continuous_columns)
-        self.NA_cat_columns = list_intersection(NA_columns, categorical_columns)
+        self.normalized_columns = list_intersection(normalized_columns, self.continuous_columns)
+        self.logscale_columns = list_intersection(logscale_columns, self.continuous_columns)
+        self.NA_cont_columns = list_intersection(NA_columns, self.continuous_columns)
+        self.NA_cat_columns = list_intersection(NA_columns, self.categorical_columns)
         # apply logscale transformation in order to measure normalization info in proper scale
         transformed_df = dataframe[self.continuous_columns]
-        transformed_df[self.logscale_columns] = transformed_df[self.logscale_columns].apply(np.log)
+        transformed_df.loc[:, self.logscale_columns] = transformed_df.loc[:, self.logscale_columns].apply(np.log)
         # stores normalization info
         self.normalized_columns_means = transformed_df[self.normalized_columns].mean(skipna=True)
         self.normalized_columns_std = transformed_df[self.normalized_columns].std(skipna=True)
@@ -77,11 +76,11 @@ class Pandas2numpy():
         """
         df = df[self.continuous_columns]
         # replace NA with median
-        df[self.NA_cont_columns] = df[self.NA_cont_columns].fillna(self.NA_cont_columns_medians)
+        df.loc[:, self.NA_cont_columns] = df.loc[:, self.NA_cont_columns].fillna(self.NA_cont_columns_medians)
         # takes logarithm of some columns
-        df[self.logscale_columns] = df[self.logscale_columns].apply(np.log)
+        df.loc[:, self.logscale_columns] = df.loc[:, self.logscale_columns].apply(np.log)
         # normalizes some columns
-        df[self.normalized_columns] = (df[self.normalized_columns] - self.normalized_columns_means) / self.normalized_columns_std
+        df.loc[:, self.normalized_columns] = (df.loc[:, self.normalized_columns] - self.normalized_columns_means) / self.normalized_columns_std
         return df.to_numpy()
 
     def categorial_to_numpy(self, df, include_continuous_NA_info=True):
@@ -96,7 +95,7 @@ class Pandas2numpy():
         # encodes data as categories using predefined categories
         df = df[self.categorical_columns].astype(self.category_dtypes).apply(lambda x: x.cat.codes)
         # NA have code -1 by default, insures all codes are positive
-        df[self.NA_cat_columns] += 1
+        df.loc[:, self.NA_cat_columns] += 1
         # adds columns encoding whether continuous columns where NA
         if include_continuous_NA_info: df = pd.concat((df, continuous_col_isNA), axis=1)
         return df.to_numpy()
@@ -124,9 +123,9 @@ class Pandas2numpy():
         """
         df = pd.DataFrame(data=tensor_cont, columns=self.continuous_columns, copy=copy)
         # removes normalization
-        df[self.normalized_columns] = (df[self.normalized_columns] * self.normalized_columns_std) + self.normalized_columns_means
+        df.loc[:, self.normalized_columns] = (df.loc[:, self.normalized_columns] * self.normalized_columns_std) + self.normalized_columns_means
         # removes logarithms
-        df[self.logscale_columns] = df[self.logscale_columns].apply(np.exp)
+        df.loc[:, self.logscale_columns] = df.loc[:, self.logscale_columns].apply(np.exp)
         # nothing to do to reinject NAs at this stage
         return df
 
