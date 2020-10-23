@@ -14,7 +14,7 @@ pip install git+https://github.com/nestordemeure/pandas2numpy.git
 ## Usage
 
 The `Pandas2numpy` class takes an example dataframe and column names in order to build an object that can encode/decode dataframe properly.
-It also takes information on columns you might want to normalize, put in logscale and that might contain NA that should be dealt with.
+It also takes information on columns you might want to normalize, put in logscale or that might contain NA that should be dealt with.
 
 NA in categorical columns are encoded by adding an additional category.
 NA in continuous columns are replaced by the median value of the column (as computed in the example dataframe) and marked in a dedicated categorical column.
@@ -37,8 +37,10 @@ NA_columns = ['sepal_width', 'species']
 logscale_columns = ['sepal_length', 'petal_length']
 
 # builds an encoder with an example dataframe to extract metrics for normalization and possible categories
+# adds 1e-25 to columns that are put in logscale to avoid Nan on 0.0 values
 tabularEncoder = Pandas2numpy(df, continuous_columns=continuous_columns, categorical_columns=categorical_columns,
-                              normalized_columns=normalized_columns, NA_columns=NA_columns, logscale_columns=logscale_columns)
+                                  normalized_columns=normalized_columns, NA_columns=NA_columns, 
+                                  logscale_columns=logscale_columns, log_epsilon=1e-25)
 ```
 
 Once constructed, you can use the `to_numpy` methods to convert dataframes and rows into numpy tensors.

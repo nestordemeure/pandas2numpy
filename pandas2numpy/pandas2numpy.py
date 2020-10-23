@@ -13,10 +13,19 @@ def list_intersection(l, l_superset):
     "Returns the intersection of `l` and `l_superset`."
     return list(set(l).intersection(l_superset))
 
+def safe_log(x, epsilon=0.0):
+    "A logarithm modified to avoid Nan"
+    return np.log(epsilon + np.abs(x))
+
+def safe_log_reciprocal(x, epsilon=0.0):
+    "Function such that `safe_log_reciprocal(safe_log(x)) = x`"
+    return np.exp(x) - epsilon
+
 class Pandas2numpy():
     "Dataframe to tensor converter for deep learning."
     def __init__(self, dataframe, continuous_columns=[], categorical_columns=[],
-                       normalized_columns=[], NA_columns=[], logscale_columns=[]):
+                       normalized_columns=[], NA_columns=[], logscale_columns=[],
+                       log_epsilon=0.0):
         """
         Stores information to be able to convert Pandas dataframe to Numpy array and back
         `dataframe` is an example dataframe used to determine all possible values in categories and store statistic for normalization and NA replacement
@@ -24,7 +33,8 @@ class Pandas2numpy():
         `categorical_columns` is the name of the columns containing categorical data to be encoded
         `normalized_columns` is the name of the columns that should be normalized by substracting the mean and dividing by the standard deviation
         `NA_columns` is the name of the coluns that might contain NA, cetgorical column will use an additional label while continuous column will replace NA with the median and store the presence of NA in an additional categorial column
-        `logscale_columns` is the name of the columns to which a logarithm should be aplied (note that their elements should be strictly over 0)
+        `logscale_columns` is the name of the columns to which a logarithm should be aplied (note it will take an absolute value and add `log_epsilon` before the logarithm to avoid producing Nan)
+        `log_epsilon` is a value that can be added before taking the logarithm to avoid getting Nan on logarithms of zeros
         """
         # insures that all columns names are valid
         all_columns = dataframe.columns
@@ -40,9 +50,10 @@ class Pandas2numpy():
         self.logscale_columns = list_intersection(logscale_columns, self.continuous_columns)
         self.NA_cont_columns = list_intersection(NA_columns, self.continuous_columns)
         self.NA_cat_columns = list_intersection(NA_columns, self.categorical_columns)
+        self.log_epsilon = log_epsilon
         # apply logscale transformation in order to measure normalization info in proper scale
         transformed_df = dataframe[self.continuous_columns]
-        transformed_df.loc[:, self.logscale_columns] = transformed_df.loc[:, self.logscale_columns].apply(np.log)
+        transformed_df.loc[:, self.logscale_columns] = transformed_df.loc[:, self.logscale_columns].apply(lambda x: safe_log(x, self.log_epsilon))
         # stores normalization info
         self.normalized_columns_means = transformed_df[self.normalized_columns].mean(skipna=True)
         self.normalized_columns_std = transformed_df[self.normalized_columns].std(skipna=True)
@@ -78,7 +89,7 @@ class Pandas2numpy():
         # replace NA with median
         df.loc[:, self.NA_cont_columns] = df.loc[:, self.NA_cont_columns].fillna(self.NA_cont_columns_medians)
         # takes logarithm of some columns
-        df.loc[:, self.logscale_columns] = df.loc[:, self.logscale_columns].apply(np.log)
+        df.loc[:, self.logscale_columns] = df.loc[:, self.logscale_columns].apply(lambda x: safe_log(x, self.log_epsilon))
         # normalizes some columns
         df.loc[:, self.normalized_columns] = (df.loc[:, self.normalized_columns] - self.normalized_columns_means) / self.normalized_columns_std
         return df.to_numpy()
@@ -125,7 +136,7 @@ class Pandas2numpy():
         # removes normalization
         df.loc[:, self.normalized_columns] = (df.loc[:, self.normalized_columns] * self.normalized_columns_std) + self.normalized_columns_means
         # removes logarithms
-        df.loc[:, self.logscale_columns] = df.loc[:, self.logscale_columns].apply(np.exp)
+        df.loc[:, self.logscale_columns] = df.loc[:, self.logscale_columns].apply(lambda x: safe_log_reciprocal(x, self.log_epsilon))
         # nothing to do to reinject NAs at this stage
         return df
 
