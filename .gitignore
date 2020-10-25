@@ -1,5 +1,7 @@
 # personnal debugging file
 demo.py
+# pip developement instalation file
+pandas2numpy.egg-info/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

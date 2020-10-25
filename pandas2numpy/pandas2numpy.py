@@ -11,7 +11,7 @@ def assert_list_contains_all(l, l_subset):
 
 def list_intersection(l, l_superset):
     "Returns the intersection of `l` and `l_superset`."
-    return list(set(l).intersection(l_superset))
+    return sorted(list(set(l).intersection(l_superset)))
 
 def safe_log(x, epsilon=0.0):
     "A logarithm modified to avoid Nan"
