@@ -2,6 +2,8 @@ import warnings
 import pandas as pd
 import numpy as np
 
+__all__ = ['Pandas2numpy']
+
 def assert_list_contains_all(l, l_subset):
     "Raise a warning if some columns from `l_subset` do not exist in `l`."
     non_existing_columns = set(l_subset).difference(l)
@@ -11,7 +13,7 @@ def assert_list_contains_all(l, l_subset):
 
 def list_intersection(l, l_superset):
     "Returns the intersection of `l` and `l_superset`."
-    return sorted(list(set(l).intersection(l_superset)))
+    return sorted(list(set(l).intersection(l_superset))) # sort to garantee reproducible column order
 
 def safe_log(x, epsilon=0.0):
     "A logarithm modified to avoid Nan"
