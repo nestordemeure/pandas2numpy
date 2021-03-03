@@ -54,7 +54,7 @@ class Pandas2numpy():
         self.NA_cat_columns = list_intersection(NA_columns, self.categorical_columns)
         self.log_epsilon = log_epsilon
         # apply logscale transformation in order to measure normalization info in proper scale
-        transformed_df = dataframe[self.continuous_columns]
+        transformed_df = dataframe.loc[:, self.continuous_columns]
         transformed_df.loc[:, self.logscale_columns] = transformed_df.loc[:, self.logscale_columns].apply(lambda x: safe_log(x, self.log_epsilon))
         # stores normalization info
         self.normalized_columns_means = transformed_df[self.normalized_columns].mean(skipna=True)
@@ -84,10 +84,10 @@ class Pandas2numpy():
         the NA in `NA_columns` are replaced with the medians of the columns in the example dataset
         takes the logarithm of the `logscale_columns` columns
         normalize the `normalized_columns` using a mean and standard deviation extracted from the example dataset
-        
+
         `df` is the dataframe to be encoded
         """
-        df = df[self.continuous_columns]
+        df = df.loc[:, self.continuous_columns]
         # replace NA with median
         df.loc[:, self.NA_cont_columns] = df.loc[:, self.NA_cont_columns].fillna(self.NA_cont_columns_medians)
         # takes logarithm of some columns
@@ -106,7 +106,7 @@ class Pandas2numpy():
         # encodes whether a cont column contained an NA (that was replaced by a median)
         if include_continuous_NA_info: continuous_col_isNA = df[self.NA_cont_columns].isna().astype(int)
         # encodes data as categories using predefined categories
-        df = df[self.categorical_columns].astype(self.category_dtypes).apply(lambda x: x.cat.codes)
+        df = df.loc[:, self.categorical_columns].astype(self.category_dtypes).apply(lambda x: x.cat.codes)
         # NA have code -1 by default, insures all codes are positive
         df.loc[:, self.NA_cat_columns] += 1
         # adds columns encoding whether continuous columns where NA
